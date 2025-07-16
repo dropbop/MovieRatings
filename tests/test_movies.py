@@ -51,3 +51,36 @@ def test_movie_listing_and_update(client):
     # delete movie
     resp = client.delete(f'/api/movies/{id_b}', headers=headers)
     assert resp.status_code == 200
+
+
+def test_rescale_elos(client):
+    client.post('/register', json={'user_name': 'carol', 'password': 'pwd'})
+    headers = auth_headers('carol', 'pwd')
+
+    ids = []
+    for title in ['A', 'B', 'C']:
+        resp = client.post('/api/movies', json={
+            'user_name': 'carol',
+            'movie_title': title,
+            'initial_rating': 'okay'
+        }, headers=headers)
+        ids.append(resp.get_json()['movie']['id'])
+
+    client.put(f'/api/movies/{ids[0]}', json={'elo_rating': 2100}, headers=headers)
+    client.put(f'/api/movies/{ids[1]}', json={'elo_rating': 3100}, headers=headers)
+    client.put(f'/api/movies/{ids[2]}', json={'elo_rating': 3900}, headers=headers)
+
+    before = [m['elo_rating'] for m in client.get('/api/movies?user=carol').get_json()]
+
+    admin_headers = auth_headers('admin', 'adminpass')
+    resp = client.post('/admin/api/rescale_elos', headers=admin_headers)
+    assert resp.status_code == 200
+
+    movies = client.get('/api/movies?user=carol').get_json()
+    after = [m['elo_rating'] for m in movies]
+    assert after != before
+
+    for i in range(len(movies) - 1):
+        assert movies[i]['elo_rating'] >= movies[i + 1]['elo_rating']
+        assert movies[i]['rank_position'] == i + 1
+    assert movies[-1]['rank_position'] == len(movies)
