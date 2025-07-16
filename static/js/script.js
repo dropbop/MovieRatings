@@ -273,9 +273,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function getStarRating(elo) {
-        // Convert ELO (0-5000) to stars (1.0-5.0)
-        const stars = 1 + (elo / 5000) * 4;
-        return '⭐ ' + stars.toFixed(1);
+        // Convert ELO to star rating by dividing by 1000 and
+        // truncating to one decimal place (e.g. 1919 -> 1.9)
+        const truncated = Math.floor((elo / 1000) * 10) / 10;
+        return '⭐ ' + truncated.toFixed(1);
     }
     
     function getCategoryEmoji(category) {

@@ -406,7 +406,7 @@
                         </div>
                         <div>
                             ELO: ${movie.elo_rating} | 
-                            ⭐ ${(1 + (movie.elo_rating / 5000) * 4).toFixed(1)} | 
+                             ⭐ ${(Math.floor((movie.elo_rating / 1000) * 10) / 10).toFixed(1)} |
                             ${movie.initial_rating}
                         </div>
                     `;
