@@ -16,7 +16,9 @@ from .db import (
     delete_user,
     update_user_password,
     admin_update_movie,
-    rescale_all_elos
+    rescale_all_elos,
+    MIN_ELO,
+    MAX_ELO,
 )
 import base64
 
@@ -208,8 +210,8 @@ def update_movie(movie_id):
         elo_rating = data['elo_rating']
         
         # Validate ELO range
-        if not isinstance(elo_rating, (int, float)) or elo_rating < 0 or elo_rating > 5000:
-            return jsonify({"error": "Invalid elo_rating (must be 0-5000)"}), 400
+        if not isinstance(elo_rating, (int, float)) or elo_rating < MIN_ELO or elo_rating > MAX_ELO:
+            return jsonify({"error": f"Invalid elo_rating (must be {MIN_ELO}-{MAX_ELO})"}), 400
             
         success = update_movie_elo(movie_id, int(elo_rating))
         

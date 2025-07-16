@@ -18,11 +18,16 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Constants for movie ratings
+# Default starting Elo values when a movie is added.
 INITIAL_ELO_VALUES = {
     'thumbs_down': 2000,
     'okay': 3000,
-    'thumbs_up': 4000
+    'thumbs_up': 4000,
 }
+
+# Absolute Elo bounds used throughout the application
+MIN_ELO = 0
+MAX_ELO = 5000
 
 # Modifier for how steeply rating differences impact the win probability.
 # A larger scale spreads ratings out by making mismatches less decisive.
@@ -262,6 +267,7 @@ def get_user_movies(user_name, category=None):
 
 def update_movie_elo(movie_id, new_elo):
     """Update a movie's ELO rating."""
+    new_elo = max(MIN_ELO, min(MAX_ELO, int(new_elo)))
     conn = get_db_connection()
     if not conn:
         return False
@@ -344,6 +350,9 @@ def update_elo_pair(movie_a_id, movie_b_id, result, k_factor=64):
 
             new_elo_a = round(elo_a + k_factor * (score_a - expected_a))
             new_elo_b = round(elo_b + k_factor * (score_b - expected_b))
+
+            new_elo_a = max(MIN_ELO, min(MAX_ELO, new_elo_a))
+            new_elo_b = max(MIN_ELO, min(MAX_ELO, new_elo_b))
 
             # Update both ratings
             cursor.execute(
@@ -533,20 +542,21 @@ def rescale_user_elos(user_name):
             updates = []
             for row in rows:
                 rating = row["elo_rating"]
-                new_rating = rating
                 if rating <= median:
                     if median == min_elo:
-                        new_rating = 2000
+                        new_rating = MIN_ELO
                     else:
                         ratio = (rating - min_elo) / (median - min_elo)
-                        new_rating = 2000 + ratio * 1000
+                        new_rating = MIN_ELO + ratio * (3000 - MIN_ELO)
                 else:
                     if max_elo == median:
-                        new_rating = 4000
+                        new_rating = MAX_ELO
                     else:
                         ratio = (rating - median) / (max_elo - median)
-                        new_rating = 3000 + ratio * 1000
-                updates.append((round(new_rating), row["id"]))
+                        new_rating = 3000 + ratio * (MAX_ELO - 3000)
+
+                new_rating = max(MIN_ELO, min(MAX_ELO, round(new_rating)))
+                updates.append((new_rating, row["id"]))
 
             psycopg2.extras.execute_batch(
                 cursor,

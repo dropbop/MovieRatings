@@ -84,3 +84,5 @@ def test_rescale_elos(client):
         assert movies[i]['elo_rating'] >= movies[i + 1]['elo_rating']
         assert movies[i]['rank_position'] == i + 1
     assert movies[-1]['rank_position'] == len(movies)
+    for m in movies:
+        assert 0 <= m['elo_rating'] <= 5000
