@@ -171,54 +171,54 @@ document.addEventListener('DOMContentLoaded', () => {
     
     async function handleComparison(choice) {
         const current = comparisonQueue.shift();
-        let newElo = newMovie.elo_rating;
-        
+
+        try {
+            const response = await fetch('/api/compare', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    movie_a_id: newMovie.id,
+                    movie_b_id: current.compareTo.id,
+                    result: choice
+                })
+            });
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Comparison failed');
+            }
+
+            // Update local ELOs with server response
+            newMovie.elo_rating = data.movie_a_rating;
+            current.compareTo.elo_rating = data.movie_b_rating;
+
+        } catch (err) {
+            showMessage(err.message, 'error');
+        }
+
         if (choice === 'a') {
-            // New movie is better
-            newElo = current.compareTo.elo_rating + 50;
             current.low = current.mid + 1;
         } else if (choice === 'b') {
-            // Existing movie is better
-            newElo = current.compareTo.elo_rating - 50;
             current.high = current.mid - 1;
         } else {
-            // Equal
-            newElo = current.compareTo.elo_rating;
             current.low = current.high + 1; // End search
         }
-        
-        // Update the new movie's ELO
-        newMovie.elo_rating = Math.max(0, Math.min(5000, newElo));
-        
+
         if (current.low <= current.high) {
             // Continue binary search
             current.mid = Math.floor((current.low + current.high) / 2);
             current.compareTo = current.movies[current.mid];
             comparisonQueue.unshift(current);
         }
-        
+
         showNextComparison();
     }
-    
+
     async function finishRanking() {
         comparisonModal.classList.add('hidden');
-        
-        // Update movie with final ELO
-        try {
-            await fetch(`/api/movies/${newMovie.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    elo_rating: newMovie.elo_rating
-                })
-            });
-            
-            showMessage('Movie ranked successfully!', 'success');
-            movieTitleInput.value = '';
-            loadUserMovies();
-        } catch (error) {
-            showMessage('Failed to save ranking', 'error');
-        }
+        showMessage('Movie ranked successfully!', 'success');
+        movieTitleInput.value = '';
+        loadUserMovies();
     }
     
     // Load user movies
