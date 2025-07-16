@@ -35,12 +35,25 @@ document.addEventListener('DOMContentLoaded', () => {
     addUserBtn.addEventListener('click', () => {
         const userName = prompt('Enter new user name:');
         if (userName && userName.trim()) {
+            // Check if user already exists
+            const existingButton = Array.from(userButtons.querySelectorAll('.user-button'))
+                .find(btn => btn.dataset.user === userName.trim());
+            
+            if (existingButton) {
+                showMessage('User already exists!', 'error');
+                return;
+            }
+            
             const newBtn = document.createElement('button');
             newBtn.type = 'button';
             newBtn.className = 'user-button';
             newBtn.dataset.user = userName.trim();
             newBtn.textContent = userName.trim();
-            userButtons.insertBefore(newBtn, addUserBtn);
+            
+            // Append to the button group
+            userButtons.appendChild(newBtn);
+            
+            showMessage(`Added user: ${userName.trim()}`, 'success');
         }
     });
     

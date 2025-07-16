@@ -147,6 +147,16 @@ def init_database():
             "error": str(e)
         }), 500
 
+@app.route('/tests')
+def tests():
+    """Renders the test page."""
+    try:
+        return render_template('tests.html')
+    except Exception as e:
+        error_details = traceback.format_exc()
+        logger.error(f"Error rendering tests page: {e}\n{error_details}")
+        return "An error occurred loading the tests page.", 500
+
 @app.route('/database-status')
 def database_status():
     """Check database connectivity and movie table status."""
