@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentFilter = 'all';
     let comparisonQueue = [];
     let newMovie = null;
+    let userPasswords = {};
     
     // DOM elements
     const userButtons = document.getElementById('user-buttons');
@@ -17,6 +18,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const movieABtn = document.getElementById('movie-a');
     const movieBBtn = document.getElementById('movie-b');
     const equalBtn = document.getElementById('equal-btn');
+
+    async function ensureLoggedIn(user) {
+        if (userPasswords[user]) return true;
+        const pwd = prompt(`Enter password for ${user}:`);
+        if (!pwd) {
+            showMessage('Password required', 'error');
+            return false;
+        }
+        const resp = await fetch('/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_name: user, password: pwd })
+        });
+        if (!resp.ok) {
+            showMessage('Login failed', 'error');
+            return false;
+        }
+        userPasswords[user] = pwd;
+        return true;
+    }
+
+    function authHeaders(user) {
+        const pwd = userPasswords[user];
+        if (!pwd) return {};
+        return { 'Authorization': 'Basic ' + btoa(`${user}:${pwd}`) };
+    }
     
     // Initialize
     loadUserMovies();
@@ -32,27 +59,41 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Add new user
-    addUserBtn.addEventListener('click', () => {
+    addUserBtn.addEventListener('click', async () => {
         const userName = prompt('Enter new user name:');
         if (userName && userName.trim()) {
-            // Check if user already exists
             const existingButton = Array.from(userButtons.querySelectorAll('.user-button'))
                 .find(btn => btn.dataset.user === userName.trim());
-            
             if (existingButton) {
                 showMessage('User already exists!', 'error');
                 return;
             }
-            
+
+            const password = prompt('Enter password:');
+            if (!password) {
+                showMessage('Password required', 'error');
+                return;
+            }
+
+            const resp = await fetch('/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_name: userName.trim(), password })
+            });
+
+            if (!resp.ok) {
+                const data = await resp.json();
+                showMessage(data.error || 'Failed to register user', 'error');
+                return;
+            }
+
             const newBtn = document.createElement('button');
             newBtn.type = 'button';
             newBtn.className = 'user-button';
             newBtn.dataset.user = userName.trim();
             newBtn.textContent = userName.trim();
-            
-            // Append to the button group
             userButtons.appendChild(newBtn);
-            
+            userPasswords[userName.trim()] = password;
             showMessage(`Added user: ${userName.trim()}`, 'success');
         }
     });
@@ -89,12 +130,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Add movie function
     async function addMovie(title, initialRating) {
         try {
+            if (!await ensureLoggedIn(currentUser)) return;
             showMessage('Adding movie...', 'info');
             
             // First, create the movie with initial rating
             const response = await fetch('/api/movies', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...authHeaders(currentUser) },
                 body: JSON.stringify({
                     user_name: currentUser,
                     movie_title: title,
@@ -290,10 +332,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     async function deleteMovie(movieId) {
         if (!confirm('Delete this movie?')) return;
-        
+
         try {
+            if (!await ensureLoggedIn(currentUser)) return;
             const response = await fetch(`/api/movies/${movieId}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: { ...authHeaders(currentUser) }
             });
             
             if (response.ok) {
