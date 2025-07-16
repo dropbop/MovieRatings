@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="movie-meta">
                         <span class="movie-stars">${getStarRating(movie.elo_rating)}</span>
                         <span class="movie-elo">ELO: ${movie.elo_rating}</span>
-                        <span class="movie-category">${getCategoryEmoji(movie.initial_rating)}</span>
+                        <span class="movie-category">${getCategoryLabel(movie.initial_rating)}</span>
                     </div>
                 </div>
                 <button class="delete-btn" data-id="${movie.id}">×</button>
@@ -318,16 +318,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // Convert ELO to star rating by dividing by 1000 and
         // truncating to one decimal place (e.g. 1919 -> 1.9)
         const truncated = Math.floor((elo / 1000) * 10) / 10;
-        return '⭐ ' + truncated.toFixed(1);
+        return truncated.toFixed(1) + ' stars';
     }
-    
-    function getCategoryEmoji(category) {
-        const emojis = {
-            'thumbs_up': '👍',
-            'okay': '👌',
-            'thumbs_down': '👎'
+
+    function getCategoryLabel(category) {
+        const labels = {
+            'thumbs_up': 'Liked It',
+            'okay': 'Okay',
+            'thumbs_down': "Didn't Like It"
         };
-        return emojis[category] || '';
+        return labels[category] || '';
     }
     
     async function deleteMovie(movieId) {
