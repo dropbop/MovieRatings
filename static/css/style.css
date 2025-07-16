@@ -1,0 +1,382 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+    color: #2c3e50;
+    margin-bottom: 30px;
+}
+
+h2 {
+    color: #34495e;
+    margin-bottom: 20px;
+}
+
+/* User Controls */
+.user-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.user-controls label {
+    font-weight: 600;
+    color: #555;
+}
+
+/* Button Groups */
+.button-group {
+    display: inline-flex;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid #ddd;
+}
+
+.button-group button {
+    padding: 8px 16px;
+    border: none;
+    background: #f8f9fa;
+    color: #555;
+    cursor: pointer;
+    border-right: 1px solid #ddd;
+    transition: all 0.2s;
+    font-size: 14px;
+}
+
+.button-group button:last-child {
+    border-right: none;
+}
+
+.button-group button:hover {
+    background: #e9ecef;
+}
+
+.button-group button.active {
+    background: #007bff;
+    color: white;
+}
+
+.add-user-btn {
+    padding: 8px 16px;
+    border: 1px dashed #007bff;
+    background: white;
+    color: #007bff;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.add-user-btn:hover {
+    background: #007bff;
+    color: white;
+}
+
+/* Add Movie Section */
+.add-movie-section {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+
+.movie-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.movie-input {
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 16px;
+    transition: border-color 0.2s;
+}
+
+.movie-input:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+.rating-buttons {
+    justify-content: stretch;
+}
+
+.rating-buttons button {
+    flex: 1;
+    padding: 12px;
+    font-size: 15px;
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    max-width: 500px;
+    width: 90%;
+}
+
+.modal-content h3 {
+    text-align: center;
+    margin-bottom: 25px;
+    color: #2c3e50;
+}
+
+.comparison-movies {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.comparison-btn {
+    padding: 15px 25px;
+    border: 2px solid #ddd;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    transition: all 0.2s;
+    min-width: 150px;
+}
+
+.comparison-btn:hover {
+    border-color: #007bff;
+    background: #f8f9ff;
+}
+
+.vs {
+    font-weight: bold;
+    color: #666;
+}
+
+.equal-btn {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    background: #f8f9fa;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #666;
+    transition: all 0.2s;
+}
+
+.equal-btn:hover {
+    background: #e9ecef;
+}
+
+/* Rankings Section */
+.rankings-section {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.filter-btn:hover {
+    border-color: #007bff;
+}
+
+.filter-btn.active {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+/* Movie List */
+.movie-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.movie-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.movie-item:hover {
+    background: #e9ecef;
+}
+
+.movie-rank {
+    font-weight: bold;
+    color: #666;
+    margin-right: 15px;
+    min-width: 40px;
+}
+
+.movie-info {
+    flex: 1;
+}
+
+.movie-title {
+    font-weight: 500;
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+.movie-meta {
+    display: flex;
+    gap: 15px;
+    font-size: 14px;
+    color: #666;
+}
+
+.movie-stars {
+    color: #f39c12;
+}
+
+.movie-elo {
+    color: #7f8c8d;
+}
+
+.delete-btn {
+    padding: 5px 10px;
+    border: none;
+    background: #e74c3c;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    transition: all 0.2s;
+}
+
+.delete-btn:hover {
+    background: #c0392b;
+}
+
+.no-movies {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+    font-style: italic;
+}
+
+/* Message Area */
+.message-area {
+    margin-top: 20px;
+    padding: 12px;
+    text-align: center;
+    font-weight: 500;
+    border-radius: 6px;
+    transition: all 0.3s;
+    min-height: 20px;
+}
+
+.message-area.success {
+    color: #155724;
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+}
+
+.message-area.error {
+    color: #721c24;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+}
+
+.message-area.info {
+    color: #0c5460;
+    background-color: #d1ecf1;
+    border: 1px solid #bee5eb;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .user-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .button-group {
+        width: 100%;
+    }
+    
+    .button-group button {
+        flex: 1;
+    }
+    
+    .comparison-movies {
+        flex-direction: column;
+    }
+    
+    .comparison-btn {
+        width: 100%;
+    }
+    
+    .movie-meta {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+}
