@@ -121,7 +121,7 @@
     </style>
 </head>
 <body>
-    <h1>🎬 Movie Ratings Test Suite</h1>
+    <h1>Movie Ratings Test Suite</h1>
     <p><a href="/">Back to Main Page</a></p>
     <p><a href="/admin">Admin Page</a></p>
     
@@ -156,9 +156,9 @@
             </select>
             <input type="text" id="test-movie-title" placeholder="Movie title" value="The Matrix">
             <select id="test-rating">
-                <option value="thumbs_down">👎 Thumbs Down</option>
-                <option value="okay">👌 Okay</option>
-                <option value="thumbs_up">👍 Thumbs Up</option>
+                <option value="thumbs_down">Didn't Like It</option>
+                <option value="okay">Okay</option>
+                <option value="thumbs_up">Liked It</option>
             </select>
             <button onclick="testAddMovie()">Add Movie</button>
         </div>
@@ -188,9 +188,9 @@
             </select>
             <select id="fetch-category">
                 <option value="">All</option>
-                <option value="thumbs_up">Thumbs Up</option>
+                <option value="thumbs_up">Liked It</option>
                 <option value="okay">Okay</option>
-                <option value="thumbs_down">Thumbs Down</option>
+                <option value="thumbs_down">Didn't Like It</option>
             </select>
             <button onclick="testGetMovies()">Get Movies</button>
         </div>
@@ -304,15 +304,15 @@
                 const data = await response.json();
                 
                 let statusMsg = `Database Status: ${data.status}\n`;
-                statusMsg += `Movie Table Exists: ${data.movie_table_exists ? '✅' : '❌'}\n`;
-                statusMsg += `User Table Exists: ${data.user_table_exists ? '✅' : '❌'}\n`;
+                statusMsg += `Movie Table Exists: ${data.movie_table_exists ? 'YES' : 'NO'}\n`;
+                statusMsg += `User Table Exists: ${data.user_table_exists ? 'YES' : 'NO'}\n`;
                 statusMsg += `Movie Count: ${data.movie_count || 0}\n`;
 
                 if (!data.movie_table_exists) {
-                    statusMsg += '\n⚠️ Movie table does not exist! Click "Initialize Movie Tables" to create it.';
+                    statusMsg += '\nMovie table does not exist! Click "Initialize Movie Tables" to create it.';
                 }
                 if (!data.user_table_exists) {
-                    statusMsg += '\n⚠️ Users table does not exist!';
+                    statusMsg += '\nUsers table does not exist!';
                 }
 
                 const success = data.movie_table_exists && data.user_table_exists;
@@ -330,7 +330,7 @@
                 const data = await response.json();
                 
                 if (response.ok) {
-                    showResult('db-status-result', 'Database initialized successfully! ✅', 'success');
+                    showResult('db-status-result', 'Database initialized successfully!', 'success');
                     // Check status again
                     setTimeout(checkDatabaseStatus, 1000);
                 } else {
@@ -489,8 +489,8 @@
                             <span style="color: #666;">(ID: ${movie.id})</span>
                         </div>
                         <div>
-                            ELO: ${movie.elo_rating} | 
-                             ⭐ ${(Math.floor((movie.elo_rating / 1000) * 10) / 10).toFixed(1)} |
+                            ELO: ${movie.elo_rating} |
+                             Rating: ${(Math.floor((movie.elo_rating / 1000) * 10) / 10).toFixed(1)} |
                             ${movie.initial_rating}
                         </div>
                     `;
@@ -683,7 +683,7 @@
             }
             
             // Display results
-            const summary = results.map(r => `${r.passed ? '✅' : '❌'} ${r.test}`).join('\n');
+            const summary = results.map(r => `${r.passed ? 'PASS' : 'FAIL'} ${r.test}`).join('\n');
             const details = JSON.stringify(results, null, 2);
             
             showResult('comprehensive-result', 
