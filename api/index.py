@@ -11,7 +11,8 @@ from .db import (
     update_elo_pair,
     delete_movie,
     create_user,
-    verify_user
+    verify_user,
+    get_all_users
 )
 import base64
 
@@ -87,6 +88,18 @@ def login():
         error_details = traceback.format_exc()
         logger.error(f"Error logging in: {e}\n{error_details}")
         return jsonify({'error': 'Login failed'}), 500
+
+
+@app.route('/api/users')
+def list_users():
+    """Return a list of all user names."""
+    try:
+        users = get_all_users()
+        return jsonify(users)
+    except Exception as e:
+        error_details = traceback.format_exc()
+        logger.error(f"Error fetching users: {e}\n{error_details}")
+        return jsonify({'error': 'Failed to fetch users'}), 500
 
 @app.route('/api/movies', methods=['GET'])
 def get_movies():

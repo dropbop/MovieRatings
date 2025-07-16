@@ -117,6 +117,24 @@ def verify_user(user_name, password):
         conn.close()
 
 
+def get_all_users():
+    """Fetch a list of all user names."""
+    conn = get_db_connection()
+    if not conn:
+        return []
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT user_name FROM users ORDER BY user_name")
+            rows = cursor.fetchall()
+            return [row[0] for row in rows]
+    except Exception as e:
+        error_details = traceback.format_exc()
+        logger.error(f"Error fetching users: {e}\n{error_details}")
+        return []
+    finally:
+        conn.close()
+
+
 def init_movie_tables():
     """Initialize the movie ratings table."""
     # Ensure the users table exists first
