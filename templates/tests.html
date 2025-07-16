@@ -230,13 +230,18 @@
                 
                 let statusMsg = `Database Status: ${data.status}\n`;
                 statusMsg += `Movie Table Exists: ${data.movie_table_exists ? '✅' : '❌'}\n`;
+                statusMsg += `User Table Exists: ${data.user_table_exists ? '✅' : '❌'}\n`;
                 statusMsg += `Movie Count: ${data.movie_count || 0}\n`;
-                
+
                 if (!data.movie_table_exists) {
                     statusMsg += '\n⚠️ Movie table does not exist! Click "Initialize Movie Tables" to create it.';
                 }
-                
-                showResult('db-status-result', statusMsg, data.movie_table_exists ? 'success' : 'error');
+                if (!data.user_table_exists) {
+                    statusMsg += '\n⚠️ Users table does not exist!';
+                }
+
+                const success = data.movie_table_exists && data.user_table_exists;
+                showResult('db-status-result', statusMsg, success ? 'success' : 'error');
             } catch (error) {
                 showResult('db-status-result', `Error: ${error.message}`, 'error');
             }
@@ -536,7 +541,7 @@
                 const dbData = await dbResponse.json();
                 results.push({
                     test: 'Database Status',
-                    passed: dbData.movie_table_exists,
+                    passed: dbData.movie_table_exists && dbData.user_table_exists,
                     details: dbData
                 });
             } catch (error) {

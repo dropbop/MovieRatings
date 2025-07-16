@@ -250,7 +250,7 @@ def tests():
 
 @app.route('/database-status')
 def database_status():
-    """Check database connectivity and movie table status."""
+    """Check database connectivity and table status."""
     conn = get_db_connection()
     if not conn:
         return jsonify({"status": "error", "message": "Connection failed"}), 500
@@ -258,13 +258,26 @@ def database_status():
     try:
         with conn.cursor() as cursor:
             # Check if movie_ratings table exists
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT EXISTS (
-                    SELECT FROM information_schema.tables 
+                    SELECT FROM information_schema.tables
                     WHERE table_name = 'movie_ratings'
                 )
-            """)
+                """
+            )
             movie_table_exists = cursor.fetchone()[0]
+
+            # Check if users table exists
+            cursor.execute(
+                """
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables
+                    WHERE table_name = 'users'
+                )
+                """
+            )
+            user_table_exists = cursor.fetchone()[0]
             
             movie_count = 0
             if movie_table_exists:
@@ -274,6 +287,7 @@ def database_status():
             return jsonify({
                 "status": "connected",
                 "movie_table_exists": movie_table_exists,
+                "user_table_exists": user_table_exists,
                 "movie_count": movie_count,
                 "message": "Database connection successful"
             })
