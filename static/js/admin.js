@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const usersDiv = document.getElementById('users');
     const moviesDiv = document.getElementById('movies');
+    const addUserBtn = document.getElementById('admin-add-user');
     let authHeader = null;
     let currentUser = null;
 
@@ -89,7 +90,28 @@ document.addEventListener('DOMContentLoaded', () => {
             row.appendChild(title);
             row.appendChild(select);
             row.appendChild(save);
-            moviesDiv.appendChild(row);
+        moviesDiv.appendChild(row);
+    });
+    }
+
+    if (addUserBtn) {
+        addUserBtn.addEventListener('click', async () => {
+            if (!await ensureAdmin()) return;
+            const name = prompt('Enter new user name:');
+            if (!name || !name.trim()) return;
+            const pwd = prompt('Enter password:');
+            if (!pwd) return;
+            const resp = await fetch('/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_name: name.trim(), password: pwd })
+            });
+            if (!resp.ok) {
+                const data = await resp.json();
+                alert(data.error || 'Failed to register user');
+                return;
+            }
+            loadUsers();
         });
     }
 

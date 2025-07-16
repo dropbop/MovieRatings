@@ -8,7 +8,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // DOM elements
     const userButtons = document.getElementById('user-buttons');
-    const addUserBtn = document.getElementById('add-user-btn');
     const movieTitleInput = document.getElementById('movie-title');
     const ratingButtons = document.querySelectorAll('.rating-btn');
     const filterButtons = document.querySelectorAll('.filter-btn');
@@ -98,49 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loadUserMovies();
         }
     });
-    
-    // Add new user
-    addUserBtn.addEventListener('click', async () => {
-        const userName = prompt('Enter new user name:');
-        if (userName && userName.trim()) {
-            const existingButton = Array.from(userButtons.querySelectorAll('.user-button'))
-                .find(btn => btn.dataset.user === userName.trim());
-            if (existingButton) {
-                showMessage('User already exists!', 'error');
-                return;
-            }
 
-            const password = prompt('Enter password:');
-            if (!password) {
-                showMessage('Password required', 'error');
-                return;
-            }
-
-            const resp = await fetch('/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_name: userName.trim(), password })
-            });
-
-            if (!resp.ok) {
-                const data = await resp.json();
-                showMessage(data.error || 'Failed to register user', 'error');
-                return;
-            }
-
-            userPasswords[userName.trim()] = password;
-            sessionStorage.setItem('userPasswords', JSON.stringify(userPasswords));
-            await populateUsers();
-            const btn = userButtons.querySelector(`.user-button[data-user="${userName.trim()}"]`);
-            if (btn) {
-                userButtons.querySelectorAll('.user-button').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentUser = userName.trim();
-            }
-            showMessage(`Added user: ${userName.trim()}`, 'success');
-        }
-    });
-    
     // Rating buttons
     ratingButtons.forEach(btn => {
         btn.addEventListener('click', async () => {
