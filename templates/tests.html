@@ -131,9 +131,21 @@
         <div id="db-status-result" class="result"></div>
     </div>
 
+    <!-- Authentication -->
+    <div class="test-section">
+        <h2>2. Authentication</h2>
+        <div class="test-controls">
+            <input type="text" id="auth-username" placeholder="Username">
+            <input type="password" id="auth-password" placeholder="Password">
+            <button onclick="registerUser()">Register</button>
+            <button onclick="loginUser()">Login</button>
+        </div>
+        <div id="auth-result" class="result"></div>
+    </div>
+
     <!-- Add Movie Tests -->
     <div class="test-section">
-        <h2>2. Add Movie Tests</h2>
+        <h2>3. Add Movie Tests</h2>
         <div class="test-controls">
             <select id="test-user">
                 <option value="Jack">Jack</option>
@@ -154,7 +166,7 @@
 
     <!-- User Management Tests -->
     <div class="test-section">
-        <h2>3. User Management Tests</h2>
+        <h2>4. User Management Tests</h2>
         <div class="test-controls">
             <input type="text" id="new-user-name" placeholder="New user name">
             <button onclick="testAddUser()">Test Add User (UI)</button>
@@ -165,7 +177,7 @@
 
     <!-- Get Movies & Sorting Tests -->
     <div class="test-section">
-        <h2>4. Get Movies & Filter Tests</h2>
+        <h2>5. Get Movies & Filter Tests</h2>
         <div class="test-controls">
             <select id="fetch-user">
                 <option value="Jack">Jack</option>
@@ -186,7 +198,7 @@
 
     <!-- ELO Update Tests -->
     <div class="test-section">
-        <h2>5. ELO Rating Update Tests</h2>
+        <h2>6. ELO Rating Update Tests</h2>
         <div class="test-controls">
             <input type="number" id="movie-id" placeholder="Movie ID" min="1">
             <input type="number" id="new-elo" placeholder="New ELO (0-5000)" min="0" max="5000" value="3500">
@@ -198,7 +210,7 @@
 
     <!-- Delete Movie Tests -->
     <div class="test-section">
-        <h2>6. Delete Movie Tests</h2>
+        <h2>7. Delete Movie Tests</h2>
         <div class="test-controls">
             <input type="number" id="delete-movie-id" placeholder="Movie ID to delete" min="1">
             <button onclick="testDeleteMovie()" class="danger">Delete Movie</button>
@@ -208,7 +220,7 @@
 
     <!-- Comprehensive Test -->
     <div class="test-section">
-        <h2>7. Comprehensive Test Suite</h2>
+        <h2>8. Comprehensive Test Suite</h2>
         <button onclick="runAllTests()" class="success">Run All Tests</button>
         <button onclick="cleanupTestData()" class="danger">Cleanup Test Data</button>
         <div id="comprehensive-result" class="result"></div>
@@ -220,6 +232,67 @@
             const resultDiv = document.getElementById(elementId);
             resultDiv.className = `result ${type}`;
             resultDiv.textContent = typeof message === 'string' ? message : JSON.stringify(message, null, 2);
+        }
+
+        const credentials = {};
+        let currentUser = null;
+
+        function authHeaders(user) {
+            const pwd = credentials[user];
+            return pwd ? { 'Authorization': 'Basic ' + btoa(`${user}:${pwd}`) } : {};
+        }
+
+        async function registerUser() {
+            const user = document.getElementById('auth-username').value;
+            const pass = document.getElementById('auth-password').value;
+            if (!user || !pass) {
+                showResult('auth-result', 'Username and password required', 'error');
+                return;
+            }
+            try {
+                const resp = await fetch('/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_name: user, password: pass })
+                });
+                const data = await resp.json();
+                if (resp.ok) {
+                    showResult('auth-result', 'Registered successfully', 'success');
+                } else {
+                    showResult('auth-result', data.error || 'Registration failed', 'error');
+                }
+            } catch (err) {
+                showResult('auth-result', `Error: ${err.message}`, 'error');
+            }
+        }
+
+        async function loginUser() {
+            const user = document.getElementById('auth-username').value;
+            const pass = document.getElementById('auth-password').value;
+            if (!user || !pass) {
+                showResult('auth-result', 'Username and password required', 'error');
+                return false;
+            }
+            try {
+                const resp = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_name: user, password: pass })
+                });
+                const data = await resp.json();
+                if (resp.ok) {
+                    credentials[user] = pass;
+                    currentUser = user;
+                    showResult('auth-result', 'Login successful', 'success');
+                    return true;
+                } else {
+                    showResult('auth-result', data.error || 'Login failed', 'error');
+                    return false;
+                }
+            } catch (err) {
+                showResult('auth-result', `Error: ${err.message}`, 'error');
+                return false;
+            }
         }
 
         // 1. Database Status Check
@@ -270,7 +343,7 @@
             try {
                 const response = await fetch('/api/movies', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...authHeaders(currentUser) },
                     body: JSON.stringify({
                         user_name: user,
                         movie_title: title,
@@ -310,7 +383,7 @@
                 try {
                     const response = await fetch('/api/movies', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', ...authHeaders(currentUser) },
                         body: JSON.stringify({
                             user_name: user,
                             movie_title: movie.title,
@@ -360,7 +433,9 @@
             
             for (const user of users) {
                 try {
-                    const response = await fetch(`/api/movies?user=${user}`);
+                    const response = await fetch(`/api/movies?user=${user}`, {
+                        headers: { ...authHeaders(currentUser) }
+                    });
                     const movies = await response.json();
                     results.push({
                         user: user,
@@ -389,7 +464,9 @@
                     url += `&category=${category}`;
                 }
                 
-                const response = await fetch(url);
+                const response = await fetch(url, {
+                    headers: { ...authHeaders(currentUser) }
+                });
                 const movies = await response.json();
                 
                 // Display in list
@@ -435,7 +512,7 @@
             try {
                 const response = await fetch(`/api/movies/${movieId}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...authHeaders(currentUser) },
                     body: JSON.stringify({ elo_rating: parseInt(newElo) })
                 });
                 
@@ -510,7 +587,8 @@
             
             try {
                 const response = await fetch(`/api/movies/${movieId}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json', ...authHeaders(currentUser) }
                 });
                 
                 const data = await response.json();
@@ -529,6 +607,12 @@
         async function runAllTests() {
             let results = [];
             showResult('comprehensive-result', 'Running all tests...', 'info');
+
+            const loggedIn = await loginUser();
+            if (!loggedIn) {
+                showResult('comprehensive-result', 'Login failed. Cannot run tests.', 'error');
+                return;
+            }
             
             // Test 1: Database Status
             try {
@@ -551,7 +635,7 @@
             try {
                 const addResponse = await fetch('/api/movies', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', ...authHeaders(currentUser) },
                     body: JSON.stringify({
                         user_name: 'TestUser',
                         movie_title: `Test Movie ${Date.now()}`,
@@ -574,7 +658,9 @@
             
             // Test 3: Get Movies
             try {
-                const getResponse = await fetch('/api/movies?user=TestUser');
+                const getResponse = await fetch('/api/movies?user=TestUser', {
+                    headers: { ...authHeaders(currentUser) }
+                });
                 const movies = await getResponse.json();
                 results.push({
                     test: 'Get Movies',
@@ -606,13 +692,18 @@
             }
             
             try {
-                const response = await fetch('/api/movies?user=TestUser');
+                const response = await fetch('/api/movies?user=TestUser', {
+                    headers: { ...authHeaders(currentUser) }
+                });
                 const movies = await response.json();
                 
                 let deleted = 0;
                 for (const movie of movies) {
                     try {
-                        await fetch(`/api/movies/${movie.id}`, { method: 'DELETE' });
+                        await fetch(`/api/movies/${movie.id}`, {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json', ...authHeaders(currentUser) }
+                        });
                         deleted++;
                     } catch (error) {
                         console.error(`Failed to delete movie ${movie.id}`);
