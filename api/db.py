@@ -251,34 +251,3 @@ def delete_movie(movie_id):
         return False
     finally:
         conn.close()
-
-# Keep the old camping functions below if you want to maintain both apps in the same DB
-# Original camping calendar functions...
-def get_preferences():
-    """Fetch all preferences from the database."""
-    conn = get_db_connection()
-    if not conn:
-        logger.error("Failed to get database connection")
-        return []
-        
-    try:
-        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
-            cursor.execute("""
-                SELECT user_name, event_date, preference_type 
-                FROM preferences 
-                ORDER BY event_date, user_name
-            """)
-            results = [dict(row) for row in cursor.fetchall()]
-            
-            # Convert date objects to strings for JSON serialization
-            for row in results:
-                row['event_date'] = row['event_date'].strftime('%Y-%m-%d')
-                
-            logger.info(f"Successfully retrieved {len(results)} preferences")
-            return results
-    except Exception as e:
-        error_details = traceback.format_exc()
-        logger.error(f"Error fetching preferences: {e}\n{error_details}")
-        return []
-    finally:
-        conn.close()
