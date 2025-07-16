@@ -24,6 +24,10 @@ INITIAL_ELO_VALUES = {
     'thumbs_up': 4000
 }
 
+# Modifier for how steeply rating differences impact the win probability.
+# A larger scale spreads ratings out by making mismatches less decisive.
+ELO_SCALE = 1000
+
 def get_db_connection():
     """Create a connection to the database."""
     try:
@@ -288,14 +292,14 @@ def update_movie_elo(movie_id, new_elo):
     finally:
         conn.close()
 
-def update_elo_pair(movie_a_id, movie_b_id, result, k_factor=32):
+def update_elo_pair(movie_a_id, movie_b_id, result, k_factor=64):
     """Update ELO ratings for two movies based on comparison result.
 
     Args:
         movie_a_id (int): ID for movie A (the first movie).
         movie_b_id (int): ID for movie B (the second movie).
         result (str): 'a', 'b', or 'equal' indicating which movie won.
-        k_factor (int, optional): K-factor for ELO calculations. Defaults to 32.
+        k_factor (int, optional): K-factor for ELO calculations. Defaults to 64.
 
     Returns:
         dict or None: Dictionary with new ratings if successful, else None.
@@ -328,8 +332,8 @@ def update_elo_pair(movie_a_id, movie_b_id, result, k_factor=32):
             elo_a = movie_a["elo_rating"]
             elo_b = movie_b["elo_rating"]
 
-            expected_a = 1 / (1 + 10 ** ((elo_b - elo_a) / 400))
-            expected_b = 1 / (1 + 10 ** ((elo_a - elo_b) / 400))
+            expected_a = 1 / (1 + 10 ** ((elo_b - elo_a) / ELO_SCALE))
+            expected_b = 1 / (1 + 10 ** ((elo_a - elo_b) / ELO_SCALE))
 
             score_a = 0.5
             score_b = 0.5
