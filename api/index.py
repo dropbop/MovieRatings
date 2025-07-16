@@ -261,6 +261,16 @@ def tests():
         logger.error(f"Error rendering tests page: {e}\n{error_details}")
         return "An error occurred loading the tests page.", 500
 
+@app.route('/admin')
+def admin_page():
+    """Renders the admin page."""
+    try:
+        return render_template('admin.html')
+    except Exception as e:
+        error_details = traceback.format_exc()
+        logger.error(f"Error rendering admin page: {e}\n{error_details}")
+        return "An error occurred loading the admin page.", 500
+
 @app.route('/database-status')
 def database_status():
     """Check database connectivity and table status."""
