@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, Response
 import logging
 import traceback
 from .db import (
@@ -12,9 +12,15 @@ from .db import (
     delete_movie,
     create_user,
     verify_user,
-    get_all_users
+    get_all_users,
+    delete_user,
+    update_user_password,
+    admin_update_movie
 )
 import base64
+
+ADMIN_USER = os.getenv('ADMIN_USER', 'admin')
+ADMIN_PASS = os.getenv('ADMIN_PASS', 'adminpass')
 
 # Configure more detailed logging
 logging.basicConfig(
@@ -47,6 +53,10 @@ def _require_auth(expected_user=None):
         return False
     return verify_user(user, password)
 
+def _require_admin():
+    user, password = _get_basic_auth_credentials()
+    return user == ADMIN_USER and password == ADMIN_PASS
+
 @app.route('/')
 def index():
     """Renders the main movie ratings page."""
@@ -56,6 +66,13 @@ def index():
         error_details = traceback.format_exc()
         logger.error(f"Error rendering index page: {e}\n{error_details}")
         return "An error occurred loading the page. Please check server logs.", 500
+
+
+@app.route('/admin')
+def admin_page():
+    if not _require_admin():
+        return Response('Unauthorized', 401, {'WWW-Authenticate': 'Basic realm="Admin"'})
+    return render_template('admin.html')
 
 
 @app.route('/register', methods=['POST'])
@@ -100,6 +117,30 @@ def list_users():
         error_details = traceback.format_exc()
         logger.error(f"Error fetching users: {e}\n{error_details}")
         return jsonify({'error': 'Failed to fetch users'}), 500
+
+
+@app.route('/admin/api/users')
+def admin_list_users():
+    if not _require_admin():
+        return jsonify({'error': 'Unauthorized'}), 401
+    return jsonify(get_all_users())
+
+
+@app.route('/admin/api/users/<user_name>', methods=['DELETE', 'PUT'])
+def admin_modify_user(user_name):
+    if not _require_admin():
+        return jsonify({'error': 'Unauthorized'}), 401
+    if request.method == 'DELETE':
+        if delete_user(user_name):
+            return jsonify({'status': 'success'})
+        return jsonify({'error': 'User not found'}), 404
+    else:
+        data = request.get_json()
+        if not data or 'password' not in data:
+            return jsonify({'error': 'Missing password'}), 400
+        if update_user_password(user_name, data['password']):
+            return jsonify({'status': 'success'})
+        return jsonify({'error': 'Failed to update password'}), 400
 
 @app.route('/api/movies', methods=['GET'])
 def get_movies():
@@ -180,6 +221,16 @@ def update_movie(movie_id):
         error_details = traceback.format_exc()
         logger.error(f"Error updating movie: {e}\n{error_details}")
         return jsonify({"error": "Failed to update movie"}), 500
+
+
+@app.route('/admin/api/movies/<int:movie_id>', methods=['PUT'])
+def admin_edit_movie(movie_id):
+    if not _require_admin():
+        return jsonify({'error': 'Unauthorized'}), 401
+    data = request.get_json() or {}
+    if admin_update_movie(movie_id, **data):
+        return jsonify({'status': 'success'})
+    return jsonify({'error': 'Failed to update movie'}), 400
 
 @app.route('/api/compare', methods=['POST'])
 def compare_movies():
