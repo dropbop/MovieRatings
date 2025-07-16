@@ -3,11 +3,12 @@ from flask import Flask, render_template, request, jsonify
 import logging
 import traceback
 from .db import (
-    get_db_connection, 
-    init_movie_tables, 
-    add_movie, 
-    get_user_movies, 
-    update_movie_elo, 
+    get_db_connection,
+    init_movie_tables,
+    add_movie,
+    get_user_movies,
+    update_movie_elo,
+    update_elo_pair,
     delete_movie
 )
 
@@ -104,6 +105,32 @@ def update_movie(movie_id):
         error_details = traceback.format_exc()
         logger.error(f"Error updating movie: {e}\n{error_details}")
         return jsonify({"error": "Failed to update movie"}), 500
+
+@app.route('/api/compare', methods=['POST'])
+def compare_movies():
+    """Compare two movies and update their ELO ratings."""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "Invalid request body"}), 400
+
+        movie_a_id = data.get("movie_a_id")
+        movie_b_id = data.get("movie_b_id")
+        result = data.get("result")
+
+        if not all([movie_a_id, movie_b_id, result]):
+            return jsonify({"error": "Missing required fields"}), 400
+
+        update_result = update_elo_pair(int(movie_a_id), int(movie_b_id), result)
+        if update_result:
+            return jsonify({"status": "success", **update_result})
+        else:
+            return jsonify({"error": "Failed to update ratings"}), 400
+
+    except Exception as e:
+        error_details = traceback.format_exc()
+        logger.error(f"Error comparing movies: {e}\n{error_details}")
+        return jsonify({"error": "Comparison failed"}), 500
 
 @app.route('/api/movies/<int:movie_id>', methods=['DELETE'])
 def delete_movie_endpoint(movie_id):

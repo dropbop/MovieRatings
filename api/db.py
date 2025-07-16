@@ -193,6 +193,92 @@ def update_movie_elo(movie_id, new_elo):
     finally:
         conn.close()
 
+def update_elo_pair(movie_a_id, movie_b_id, result, k_factor=32):
+    """Update ELO ratings for two movies based on comparison result.
+
+    Args:
+        movie_a_id (int): ID for movie A (the first movie).
+        movie_b_id (int): ID for movie B (the second movie).
+        result (str): 'a', 'b', or 'equal' indicating which movie won.
+        k_factor (int, optional): K-factor for ELO calculations. Defaults to 32.
+
+    Returns:
+        dict or None: Dictionary with new ratings if successful, else None.
+    """
+
+    if result not in {'a', 'b', 'equal'}:
+        logger.error(f"Invalid comparison result: {result}")
+        return None
+
+    conn = get_db_connection()
+    if not conn:
+        return None
+
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+            cursor.execute(
+                "SELECT id, user_name, elo_rating FROM movie_ratings WHERE id IN (%s, %s)",
+                (movie_a_id, movie_b_id),
+            )
+            rows = cursor.fetchall()
+            if len(rows) != 2:
+                logger.error("One or both movie IDs not found for comparison")
+                return None
+
+            # Map rows by id for easy lookup
+            movies = {row[0]: dict(row) for row in rows}
+            movie_a = movies.get(movie_a_id)
+            movie_b = movies.get(movie_b_id)
+
+            elo_a = movie_a["elo_rating"]
+            elo_b = movie_b["elo_rating"]
+
+            expected_a = 1 / (1 + 10 ** ((elo_b - elo_a) / 400))
+            expected_b = 1 / (1 + 10 ** ((elo_a - elo_b) / 400))
+
+            score_a = 0.5
+            score_b = 0.5
+            if result == "a":
+                score_a, score_b = 1, 0
+            elif result == "b":
+                score_a, score_b = 0, 1
+
+            new_elo_a = round(elo_a + k_factor * (score_a - expected_a))
+            new_elo_b = round(elo_b + k_factor * (score_b - expected_b))
+
+            # Update both ratings
+            cursor.execute(
+                "UPDATE movie_ratings SET elo_rating=%s, updated_at=CURRENT_TIMESTAMP WHERE id=%s",
+                (new_elo_a, movie_a_id),
+            )
+            cursor.execute(
+                "UPDATE movie_ratings SET elo_rating=%s, updated_at=CURRENT_TIMESTAMP WHERE id=%s",
+                (new_elo_b, movie_b_id),
+            )
+
+            # Update rank positions for affected users
+            affected_users = {movie_a["user_name"], movie_b["user_name"]}
+            for user in affected_users:
+                update_rank_positions(user)
+
+            logger.info(
+                f"Updated ELOs - Movie {movie_a_id}: {elo_a}->{new_elo_a}, Movie {movie_b_id}: {elo_b}->{new_elo_b}"
+            )
+
+            return {
+                "movie_a_id": movie_a_id,
+                "movie_b_id": movie_b_id,
+                "movie_a_rating": new_elo_a,
+                "movie_b_rating": new_elo_b,
+            }
+
+    except Exception as e:
+        error_details = traceback.format_exc()
+        logger.error(f"Error updating ELO pair: {e}\n{error_details}")
+        return None
+    finally:
+        conn.close()
+
 def update_rank_positions(user_name):
     """Update rank positions for all movies of a user based on ELO."""
     conn = get_db_connection()
