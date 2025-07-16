@@ -44,9 +44,49 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!pwd) return {};
         return { 'Authorization': 'Basic ' + btoa(`${user}:${pwd}`) };
     }
+
+    async function populateUsers() {
+        try {
+            const resp = await fetch('/api/users');
+            const users = await resp.json();
+            userButtons.innerHTML = '';
+            users.forEach((u, idx) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'user-button';
+                btn.dataset.user = u;
+                btn.textContent = u;
+                if ((currentUser === u) || (!currentUser && idx === 0)) {
+                    btn.classList.add('active');
+                    currentUser = u;
+                }
+                userButtons.appendChild(btn);
+            });
+            if (!users.includes(currentUser) && users.length > 0) {
+                currentUser = users[0];
+                userButtons.firstChild.classList.add('active');
+            }
+            loadUserMovies();
+        } catch (err) {
+            console.error('Failed to load users', err);
+            if (!userButtons.querySelector('.user-button')) {
+                ['Jack'].forEach((name, idx) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'user-button';
+                    btn.dataset.user = name;
+                    btn.textContent = name;
+                    if (idx === 0) btn.classList.add('active');
+                    userButtons.appendChild(btn);
+                });
+                currentUser = 'Jack';
+                loadUserMovies();
+            }
+        }
+    }
     
-    // Initialize
-    loadUserMovies();
+    // Fetch and display users on load
+    populateUsers();
     
     // User selection
     userButtons.addEventListener('click', (e) => {
@@ -87,13 +127,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const newBtn = document.createElement('button');
-            newBtn.type = 'button';
-            newBtn.className = 'user-button';
-            newBtn.dataset.user = userName.trim();
-            newBtn.textContent = userName.trim();
-            userButtons.appendChild(newBtn);
             userPasswords[userName.trim()] = password;
+            await populateUsers();
+            const btn = userButtons.querySelector(`.user-button[data-user="${userName.trim()}"]`);
+            if (btn) {
+                userButtons.querySelectorAll('.user-button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentUser = userName.trim();
+            }
             showMessage(`Added user: ${userName.trim()}`, 'success');
         }
     });
