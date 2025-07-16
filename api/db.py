@@ -70,6 +70,9 @@ def init_user_table():
 
 def create_user(user_name, password):
     """Create a new user with hashed password."""
+    if not init_user_table():
+        logger.error("Failed to initialize users table before creating user")
+        return False
     conn = get_db_connection()
     if not conn:
         return False
