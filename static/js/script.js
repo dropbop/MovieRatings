@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentFilter = 'all';
     let comparisonQueue = [];
     let newMovie = null;
-    let userPasswords = {};
+    let userPasswords = JSON.parse(sessionStorage.getItem('userPasswords') || '{}');
     
     // DOM elements
     const userButtons = document.getElementById('user-buttons');
@@ -36,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return false;
         }
         userPasswords[user] = pwd;
+        sessionStorage.setItem('userPasswords', JSON.stringify(userPasswords));
         return true;
     }
 
@@ -128,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             userPasswords[userName.trim()] = password;
+            sessionStorage.setItem('userPasswords', JSON.stringify(userPasswords));
             await populateUsers();
             const btn = userButtons.querySelector(`.user-button[data-user="${userName.trim()}"]`);
             if (btn) {
