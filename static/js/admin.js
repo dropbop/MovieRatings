@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const usersDiv = document.getElementById('users');
     const moviesDiv = document.getElementById('movies');
     const addUserBtn = document.getElementById('admin-add-user');
+    const rescaleBtn = document.getElementById('rescale-elo-btn');
     let authHeader = null;
     let currentUser = null;
 
@@ -90,8 +91,8 @@ document.addEventListener('DOMContentLoaded', () => {
             row.appendChild(title);
             row.appendChild(select);
             row.appendChild(save);
-        moviesDiv.appendChild(row);
-    });
+            moviesDiv.appendChild(row);
+        });
     }
 
     if (addUserBtn) {
@@ -112,6 +113,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             loadUsers();
+        });
+    }
+
+    if (rescaleBtn) {
+        rescaleBtn.addEventListener('click', async () => {
+            if (!await ensureAdmin()) return;
+            if (!confirm('Rescale all Elo ratings?')) return;
+            const resp = await fetch('/admin/api/rescale_elos', {
+                method: 'POST',
+                headers: authHeader
+            });
+            if (resp.ok) {
+                alert('Elo ratings recalculated');
+                loadMovies();
+            } else {
+                const data = await resp.json().catch(() => ({}));
+                alert(data.error || 'Failed to rescale elos');
+            }
         });
     }
 
