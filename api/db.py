@@ -432,3 +432,70 @@ def delete_movie(movie_id):
         return False
     finally:
         conn.close()
+
+def delete_user(user_name):
+    """Delete a user and all of their movies."""
+    conn = get_db_connection()
+    if not conn:
+        return False
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("DELETE FROM movie_ratings WHERE user_name = %s", (user_name,))
+            cursor.execute("DELETE FROM users WHERE user_name = %s", (user_name,))
+        return True
+    except Exception as e:
+        error_details = traceback.format_exc()
+        logger.error(f"Error deleting user: {e}\n{error_details}")
+        return False
+    finally:
+        conn.close()
+
+
+def update_user_password(user_name, new_password):
+    """Update a user's password."""
+    conn = get_db_connection()
+    if not conn:
+        return False
+    try:
+        with conn.cursor() as cursor:
+            password_hash = generate_password_hash(new_password)
+            cursor.execute(
+                "UPDATE users SET password_hash=%s WHERE user_name=%s",
+                (password_hash, user_name),
+            )
+        return True
+    except Exception as e:
+        error_details = traceback.format_exc()
+        logger.error(f"Error updating password: {e}\n{error_details}")
+        return False
+    finally:
+        conn.close()
+
+
+def admin_update_movie(movie_id, **fields):
+    """Admin update of movie title or category."""
+    allowed = {'movie_title', 'initial_rating'}
+    sets = []
+    values = []
+    for key, val in fields.items():
+        if key in allowed:
+            sets.append(f"{key} = %s")
+            values.append(val)
+    if not sets:
+        return False
+    conn = get_db_connection()
+    if not conn:
+        return False
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                f"UPDATE movie_ratings SET {', '.join(sets)}, updated_at=CURRENT_TIMESTAMP WHERE id = %s",
+                (*values, movie_id)
+            )
+        return True
+    except Exception as e:
+        error_details = traceback.format_exc()
+        logger.error(f"Error updating movie: {e}\n{error_details}")
+        return False
+    finally:
+        conn.close()
