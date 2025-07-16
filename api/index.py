@@ -15,7 +15,8 @@ from .db import (
     get_all_users,
     delete_user,
     update_user_password,
-    admin_update_movie
+    admin_update_movie,
+    rescale_all_elos
 )
 import base64
 
@@ -231,6 +232,19 @@ def admin_edit_movie(movie_id):
     if admin_update_movie(movie_id, **data):
         return jsonify({'status': 'success'})
     return jsonify({'error': 'Failed to update movie'}), 400
+
+
+@app.route('/admin/api/rescale_elos', methods=['POST'])
+def admin_rescale_elos():
+    if not _require_admin():
+        return jsonify({'error': 'Unauthorized'}), 401
+    try:
+        rescale_all_elos()
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        error_details = traceback.format_exc()
+        logger.error(f"Error rescaling elos: {e}\n{error_details}")
+        return jsonify({'error': 'Failed to rescale elos'}), 500
 
 @app.route('/api/compare', methods=['POST'])
 def compare_movies():

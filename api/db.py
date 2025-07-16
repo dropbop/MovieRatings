@@ -503,3 +503,69 @@ def admin_update_movie(movie_id, **fields):
         return False
     finally:
         conn.close()
+
+
+def rescale_user_elos(user_name):
+    """Rescale a user's movie ELOs using a piecewise linear transform."""
+    conn = get_db_connection()
+    if not conn:
+        return False
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
+            cursor.execute(
+                "SELECT id, elo_rating FROM movie_ratings WHERE user_name=%s ORDER BY elo_rating",
+                (user_name,),
+            )
+            rows = cursor.fetchall()
+            if not rows:
+                return True
+
+            elos = [row["elo_rating"] for row in rows]
+            min_elo = min(elos)
+            max_elo = max(elos)
+            mid_index = len(elos) // 2
+            if len(elos) % 2:
+                median = sorted(elos)[mid_index]
+            else:
+                ordered = sorted(elos)
+                median = (ordered[mid_index - 1] + ordered[mid_index]) / 2
+
+            updates = []
+            for row in rows:
+                rating = row["elo_rating"]
+                new_rating = rating
+                if rating <= median:
+                    if median == min_elo:
+                        new_rating = 2000
+                    else:
+                        ratio = (rating - min_elo) / (median - min_elo)
+                        new_rating = 2000 + ratio * 1000
+                else:
+                    if max_elo == median:
+                        new_rating = 4000
+                    else:
+                        ratio = (rating - median) / (max_elo - median)
+                        new_rating = 3000 + ratio * 1000
+                updates.append((round(new_rating), row["id"]))
+
+            psycopg2.extras.execute_batch(
+                cursor,
+                "UPDATE movie_ratings SET elo_rating=%s, updated_at=CURRENT_TIMESTAMP WHERE id=%s",
+                updates,
+            )
+
+        update_rank_positions(user_name)
+        return True
+    except Exception as e:
+        error_details = traceback.format_exc()
+        logger.error(f"Error rescaling ELOs for {user_name}: {e}\n{error_details}")
+        return False
+    finally:
+        conn.close()
+
+
+def rescale_all_elos():
+    """Rescale ELOs for all users."""
+    for user in get_all_users():
+        rescale_user_elos(user)
+    return True

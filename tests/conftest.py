@@ -7,7 +7,7 @@ import pytest
 from api.index import app
 from api.db import init_movie_tables
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def client(postgresql):
     os.environ['DATABASE_URL'] = postgresql.dsn()
     init_movie_tables()
