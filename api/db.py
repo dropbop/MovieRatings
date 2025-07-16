@@ -3,6 +3,7 @@ import logging
 import traceback
 import psycopg2
 import psycopg2.extras
+from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -42,8 +43,81 @@ def get_db_connection():
         logger.error(f"Database connection error: {e}\n{error_details}")
         return None
 
+def init_user_table():
+    """Create the users table if it doesn't exist."""
+    conn = get_db_connection()
+    if not conn:
+        return False
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS users (
+                    id SERIAL PRIMARY KEY,
+                    user_name VARCHAR(50) UNIQUE NOT NULL,
+                    password_hash VARCHAR(255) NOT NULL
+                )
+                """
+            )
+        logger.info("Users table initialized successfully")
+        return True
+    except Exception as e:
+        error_details = traceback.format_exc()
+        logger.error(f"Error initializing users table: {e}\n{error_details}")
+        return False
+    finally:
+        conn.close()
+
+def create_user(user_name, password):
+    """Create a new user with hashed password."""
+    conn = get_db_connection()
+    if not conn:
+        return False
+    try:
+        with conn.cursor() as cursor:
+            password_hash = generate_password_hash(password)
+            cursor.execute(
+                "INSERT INTO users (user_name, password_hash) VALUES (%s, %s)",
+                (user_name, password_hash),
+            )
+        return True
+    except psycopg2.IntegrityError:
+        logger.error(f"User already exists: {user_name}")
+        return False
+    except Exception as e:
+        error_details = traceback.format_exc()
+        logger.error(f"Error creating user: {e}\n{error_details}")
+        return False
+    finally:
+        conn.close()
+
+def verify_user(user_name, password):
+    """Verify a user's credentials."""
+    conn = get_db_connection()
+    if not conn:
+        return False
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT password_hash FROM users WHERE user_name = %s",
+                (user_name,),
+            )
+            row = cursor.fetchone()
+            if row and check_password_hash(row[0], password):
+                return True
+            return False
+    except Exception as e:
+        error_details = traceback.format_exc()
+        logger.error(f"Error verifying user: {e}\n{error_details}")
+        return False
+    finally:
+        conn.close()
+
+
 def init_movie_tables():
     """Initialize the movie ratings table."""
+    # Ensure the users table exists first
+    init_user_table()
     conn = get_db_connection()
     if not conn:
         return False

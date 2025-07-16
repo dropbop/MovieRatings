@@ -9,8 +9,11 @@ from .db import (
     get_user_movies,
     update_movie_elo,
     update_elo_pair,
-    delete_movie
+    delete_movie,
+    create_user,
+    verify_user
 )
+import base64
 
 # Configure more detailed logging
 logging.basicConfig(
@@ -21,6 +24,28 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder='../templates', static_folder='../static')
 
+
+def _get_basic_auth_credentials():
+    """Extract basic auth credentials from the request."""
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Basic '):
+        return None, None
+    try:
+        decoded = base64.b64decode(auth_header.split(' ', 1)[1]).decode('utf-8')
+        user, password = decoded.split(':', 1)
+        return user, password
+    except Exception:
+        return None, None
+
+
+def _require_auth(expected_user=None):
+    user, password = _get_basic_auth_credentials()
+    if not user or not password:
+        return False
+    if expected_user and user != expected_user:
+        return False
+    return verify_user(user, password)
+
 @app.route('/')
 def index():
     """Renders the main movie ratings page."""
@@ -30,6 +55,38 @@ def index():
         error_details = traceback.format_exc()
         logger.error(f"Error rendering index page: {e}\n{error_details}")
         return "An error occurred loading the page. Please check server logs.", 500
+
+
+@app.route('/register', methods=['POST'])
+def register():
+    """Create a new user account."""
+    try:
+        data = request.get_json()
+        if not data or 'user_name' not in data or 'password' not in data:
+            return jsonify({'error': 'Missing required fields'}), 400
+        if create_user(data['user_name'], data['password']):
+            return jsonify({'status': 'success'})
+        return jsonify({'error': 'User already exists or could not be created'}), 400
+    except Exception as e:
+        error_details = traceback.format_exc()
+        logger.error(f"Error registering user: {e}\n{error_details}")
+        return jsonify({'error': 'Failed to register user'}), 500
+
+
+@app.route('/login', methods=['POST'])
+def login():
+    """Verify user credentials."""
+    try:
+        data = request.get_json()
+        if not data or 'user_name' not in data or 'password' not in data:
+            return jsonify({'error': 'Missing required fields'}), 400
+        if verify_user(data['user_name'], data['password']):
+            return jsonify({'status': 'success'})
+        return jsonify({'error': 'Invalid credentials'}), 401
+    except Exception as e:
+        error_details = traceback.format_exc()
+        logger.error(f"Error logging in: {e}\n{error_details}")
+        return jsonify({'error': 'Login failed'}), 500
 
 @app.route('/api/movies', methods=['GET'])
 def get_movies():
@@ -58,6 +115,9 @@ def create_movie():
         user_name = data.get('user_name')
         movie_title = data.get('movie_title')
         initial_rating = data.get('initial_rating')
+
+        if not _require_auth(user_name):
+            return jsonify({'error': 'Unauthorized'}), 401
         
         # Validation
         if not user_name or not movie_title or not initial_rating:
@@ -83,6 +143,8 @@ def create_movie():
 def update_movie(movie_id):
     """Update a movie's ELO rating."""
     try:
+        if not _require_auth():
+            return jsonify({'error': 'Unauthorized'}), 401
         data = request.get_json()
         
         if not data or 'elo_rating' not in data:
@@ -136,6 +198,8 @@ def compare_movies():
 def delete_movie_endpoint(movie_id):
     """Delete a movie."""
     try:
+        if not _require_auth():
+            return jsonify({'error': 'Unauthorized'}), 401
         success = delete_movie(movie_id)
         
         if success:
