@@ -122,8 +122,8 @@
 </head>
 <body>
     <h1>Movie Ratings Test Suite</h1>
-    <p><a href="/">Back to Main Page</a></p>
-    <p><a href="/admin">Admin Page</a></p>
+    <p><a href="../">Back to Main Page</a></p>
+    <p><a href="../admin">Admin Page</a></p>
     
     <!-- Database Status -->
     <div class="test-section">
@@ -228,6 +228,7 @@
         <div id="comprehensive-result" class="result"></div>
     </div>
 
+    <script src="static/js/prefix.js"></script>
     <script>
         // Utility function to display results
         function showResult(elementId, message, type = 'info') {
@@ -252,7 +253,7 @@
                 return;
             }
             try {
-                const resp = await fetch('/register', {
+                const resp = await fetch(api('/register'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ user_name: user, password: pass })
@@ -276,7 +277,7 @@
                 return false;
             }
             try {
-                const resp = await fetch('/login', {
+                const resp = await fetch(api('/login'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ user_name: user, password: pass })
@@ -300,7 +301,7 @@
         // 1. Database Status Check
         async function checkDatabaseStatus() {
             try {
-                const response = await fetch('/database-status');
+                const response = await fetch(api('/database-status'));
                 const data = await response.json();
                 
                 let statusMsg = `Database Status: ${data.status}\n`;
@@ -326,7 +327,7 @@
         async function initializeDatabase() {
             try {
                 showResult('db-status-result', 'Initializing database...', 'info');
-                const response = await fetch('/init-movie-database');
+                const response = await fetch(api('/init-movie-database'));
                 const data = await response.json();
                 
                 if (response.ok) {
@@ -348,7 +349,7 @@
             const rating = document.getElementById('test-rating').value;
             
             try {
-                const response = await fetch('/api/movies', {
+                const response = await fetch(api('/api/movies'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', ...authHeaders(currentUser) },
                     body: JSON.stringify({
@@ -388,7 +389,7 @@
             
             for (const movie of testMovies) {
                 try {
-                    const response = await fetch('/api/movies', {
+                    const response = await fetch(api('/api/movies'), {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', ...authHeaders(currentUser) },
                         body: JSON.stringify({
@@ -440,7 +441,7 @@
             
             for (const user of users) {
                 try {
-                    const response = await fetch(`/api/movies?user=${user}`, {
+                const response = await fetch(api(`/api/movies?user=${user}`), {
                         headers: { ...authHeaders(currentUser) }
                     });
                     const movies = await response.json();
@@ -471,7 +472,7 @@
                     url += `&category=${category}`;
                 }
                 
-                const response = await fetch(url, {
+                const response = await fetch(api(url), {
                     headers: { ...authHeaders(currentUser) }
                 });
                 const movies = await response.json();
@@ -517,7 +518,7 @@
             }
             
             try {
-                const response = await fetch(`/api/movies/${movieId}`, {
+                const response = await fetch(api(`/api/movies/${movieId}`), {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', ...authHeaders(currentUser) },
                     body: JSON.stringify({ elo_rating: parseInt(newElo) })
@@ -593,7 +594,7 @@
             }
             
             try {
-                const response = await fetch(`/api/movies/${movieId}`, {
+                const response = await fetch(api(`/api/movies/${movieId}`), {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json', ...authHeaders(currentUser) }
                 });
@@ -623,7 +624,7 @@
             
             // Test 1: Database Status
             try {
-                const dbResponse = await fetch('/database-status');
+                const dbResponse = await fetch(api('/database-status'));
                 const dbData = await dbResponse.json();
                 results.push({
                     test: 'Database Status',
@@ -640,7 +641,7 @@
             
             // Test 2: Add Movie
             try {
-                const addResponse = await fetch('/api/movies', {
+                const addResponse = await fetch(api('/api/movies'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', ...authHeaders(currentUser) },
                     body: JSON.stringify({
@@ -665,7 +666,7 @@
             
             // Test 3: Get Movies
             try {
-                const getResponse = await fetch('/api/movies?user=TestUser', {
+                const getResponse = await fetch(api('/api/movies?user=TestUser'), {
                     headers: { ...authHeaders(currentUser) }
                 });
                 const movies = await getResponse.json();
@@ -699,7 +700,7 @@
             }
             
             try {
-                const response = await fetch('/api/movies?user=TestUser', {
+                const response = await fetch(api('/api/movies?user=TestUser'), {
                     headers: { ...authHeaders(currentUser) }
                 });
                 const movies = await response.json();
@@ -707,7 +708,7 @@
                 let deleted = 0;
                 for (const movie of movies) {
                     try {
-                        await fetch(`/api/movies/${movie.id}`, {
+                        await fetch(api(`/api/movies/${movie.id}`), {
                             method: 'DELETE',
                             headers: { 'Content-Type': 'application/json', ...authHeaders(currentUser) }
                         });

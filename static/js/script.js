@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showMessage('Password required', 'error');
             return false;
         }
-        const resp = await fetch('/login', {
+        const resp = await fetch(api('login'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ user_name: user, password: pwd })
@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function populateUsers() {
         try {
-            const resp = await fetch('/api/users');
+            const resp = await fetch(api('api/users'));
             const users = await resp.json();
             userButtons.innerHTML = '';
             users.forEach((u, idx) => {
@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showMessage('Adding movie...', 'info');
             
             // First, create the movie with initial rating
-            const response = await fetch('/api/movies', {
+            const response = await fetch(api('api/movies'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...authHeaders(currentUser) },
                 body: JSON.stringify({
@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Get movies in a specific category
     async function getMoviesInCategory(category) {
-        const response = await fetch(`/api/movies?user=${currentUser}&category=${category}`);
+        const response = await fetch(api(`api/movies?user=${currentUser}&category=${category}`));
         const movies = await response.json();
         return movies.filter(m => m.id !== newMovie.id);
     }
@@ -215,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const current = comparisonQueue.shift();
 
         try {
-            const response = await fetch('/api/compare', {
+            const response = await fetch(api('api/compare'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -266,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load user movies
     async function loadUserMovies() {
         try {
-            const response = await fetch(`/api/movies?user=${currentUser}`);
+            const response = await fetch(api(`api/movies?user=${currentUser}`));
             const movies = await response.json();
             
             // Filter movies
@@ -335,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             if (!await ensureLoggedIn(currentUser)) return;
-            const response = await fetch(`/api/movies/${movieId}`, {
+            const response = await fetch(api(`api/movies/${movieId}`), {
                 method: 'DELETE',
                 headers: { ...authHeaders(currentUser) }
             });
